@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"amocrm2.0/internal/config"
 	"amocrm2.0/internal/infrastructure/transport/http/dto"
 	"amocrm2.0/internal/usecases"
 	"github.com/go-chi/render"
@@ -14,9 +15,9 @@ type Handlers struct {
 	ContactHandlers     *ContactHandlers
 }
 
-func NewHandlers(uc *usecases.UseCases) *Handlers {
+func NewHandlers(uc *usecases.UseCases, cfg *config.Config) *Handlers {
 	return &Handlers{
-		AccountHandlers:     newAccountHandlers(uc.AccountUC),
+		AccountHandlers:     newAccountHandlers(uc.AccountUC, cfg),
 		IntegrationHandlers: newIntegrationHandlers(uc.IntegrationUC),
 		ContactHandlers:     newContactHandlers(uc.ContactUC),
 	}

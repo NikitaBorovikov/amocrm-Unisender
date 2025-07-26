@@ -1,5 +1,13 @@
 package dto
 
+type ExchangeTokensRequest struct {
+	ClientID    string `json:"client_id"`
+	SecretKey   string `json:"client_secret"`
+	GrantType   string `json:"grant_type"`
+	Code        string `json:"code"`
+	RedirectURL string `json:"redirect_uri"`
+}
+
 type AddAccountRequest struct {
 	AccountID    int    `json:"account_id"`
 	AccessToken  string `json:"access_token"`
@@ -28,4 +36,14 @@ type UpdateIntegrationRequest struct {
 	SecretKey   string `json:"secret_key"`
 	RedirectURL string `json:"redirect_url"`
 	AuthCode    string `json:"auth_code"`
+}
+
+func NewExchangeTokensRequest(clientID, secretKey, grantType, code, redirectURL string) *ExchangeTokensRequest {
+	return &ExchangeTokensRequest{
+		ClientID:    clientID,
+		SecretKey:   secretKey,
+		GrantType:   grantType,
+		Code:        code,
+		RedirectURL: redirectURL,
+	}
 }
