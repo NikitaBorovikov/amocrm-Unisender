@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	exchangeTokensURL = "https://nikitaborovikov23.amocrm.ru/oauth2/access_token"
-	grantType         = "authorization_code"
-	contentType       = "application/json"
+	authGrantType = "authorization_code"
+	contentType   = "application/json"
 )
 
 type AccountHandlers struct {
@@ -32,10 +31,11 @@ func newAccountHandlers(uc *usecases.AccountUC, cfg *config.Config) *AccountHand
 	}
 }
 
+// GET method
 func (h *AccountHandlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
-	// Get Integration info and auth-code
+	integrationInfo := getIntegrationInfoFromQuery(r)
 
-	account, err := h.ExchangeTokens()
+	account, err := exchangeTokens(integrationInfo, &h.Cfg.Integration)
 	if err != nil {
 		logrus.Error(err)
 		sendErrorResponse(w, r, http.StatusBadRequest, err)
@@ -51,19 +51,21 @@ func (h *AccountHandlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	sendOKResponse(w, r, http.StatusCreated, account, "successful auth")
 }
 
-func (h *AccountHandlers) ExchangeTokens() (*amocrm.Account, error) {
+func exchangeTokens(integration *dto.IntegrationInfoRequest, cfg *config.Integration) (*amocrm.Account, error) {
 	req := dto.NewExchangeTokensRequest(
-		h.Cfg.Integration.ClientID,
-		h.Cfg.Integration.SecrestKey,
-		grantType,
-		h.Cfg.Integration.AuthCode,
-		h.Cfg.Integration.RedirectURL,
+		integration.AuthCode,
+		cfg.ClientID,
+		cfg.SecrestKey,
+		cfg.RedirectURL,
+		authGrantType,
 	)
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal json: %v", err)
 	}
+
+	exchangeTokensURL := makeExchangeTokensURL(integration.Referer)
 
 	resp, err := http.Post(
 		exchangeTokensURL,
@@ -106,4 +108,16 @@ func (h *AccountHandlers) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *AccountHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 
+}
+
+func getIntegrationInfoFromQuery(r *http.Request) *dto.IntegrationInfoRequest {
+	integrationInfo := &dto.IntegrationInfoRequest{
+		AuthCode: r.URL.Query().Get("code"),
+		Referer:  r.URL.Query().Get("referer"),
+	}
+	return integrationInfo
+}
+
+func makeExchangeTokensURL(referer string) string {
+	return fmt.Sprintf("https://%s/oauth2/access_token", referer)
 }

@@ -23,7 +23,6 @@ type Integration struct {
 	ClientID    string `env:"CLIENT_ID"`
 	SecrestKey  string `env:"SECRET_KEY"`
 	RedirectURL string `env:"REDIRECT_URL"`
-	AuthCode    string `env:"AUTH_CODE"`
 }
 
 func InitConfig() (*Config, error) {
