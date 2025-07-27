@@ -1,5 +1,18 @@
 package dto
 
+type IntegrationInfoRequest struct {
+	AuthCode string
+	Referer  string
+}
+
+type ExchangeTokensRequest struct {
+	ClientID    string `json:"client_id"`
+	SecretKey   string `json:"client_secret"`
+	GrantType   string `json:"grant_type"`
+	Code        string `json:"code"`
+	RedirectURL string `json:"redirect_uri"`
+}
+
 type AddAccountRequest struct {
 	AccountID    int    `json:"account_id"`
 	AccessToken  string `json:"access_token"`
@@ -28,4 +41,21 @@ type UpdateIntegrationRequest struct {
 	SecretKey   string `json:"secret_key"`
 	RedirectURL string `json:"redirect_url"`
 	AuthCode    string `json:"auth_code"`
+}
+
+func NewExchangeTokensRequest(code, clientID, secretKey, redirectURL, grantType string) *ExchangeTokensRequest {
+	return &ExchangeTokensRequest{
+		Code:        code,
+		ClientID:    clientID,
+		SecretKey:   secretKey,
+		RedirectURL: redirectURL,
+		GrantType:   grantType,
+	}
+}
+
+func NewIntegrationInfo(authCode, referer string) *IntegrationInfoRequest {
+	return &IntegrationInfoRequest{
+		AuthCode: authCode,
+		Referer:  referer,
+	}
 }

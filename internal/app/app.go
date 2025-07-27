@@ -17,7 +17,7 @@ func RunServer() {
 
 	repo := inmemorydb.NewInmomryDB()
 	usecase := usecases.NewUseCases(repo.AccountRepo, repo.IntegrationRepo, repo.ContactRepo)
-	handlers := handlers.NewHandlers(usecase)
+	handlers := handlers.NewHandlers(usecase, cfg)
 	go server.Run(handlers, cfg.RestServer.Port)
 
 	select {}
