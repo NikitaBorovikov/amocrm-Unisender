@@ -2,7 +2,7 @@ package dto
 
 type IntegrationInfoRequest struct {
 	AuthCode string
-	Referer  string
+	Domain   string
 }
 
 type ExchangeTokensRequest struct {
@@ -11,6 +11,14 @@ type ExchangeTokensRequest struct {
 	GrantType   string `json:"grant_type"`
 	Code        string `json:"code"`
 	RedirectURL string `json:"redirect_uri"`
+}
+
+type RefreshAccessTokenRequest struct {
+	ClinetID     string `json:"client_id"`
+	SecretKey    string `json:"client_secret"`
+	GrantType    string `json:"grant_type"`
+	RefreshToken string `json:"refresh_token"`
+	RedirectURL  string `json:"redirect_uri"`
 }
 
 type AddAccountRequest struct {
@@ -53,9 +61,19 @@ func NewExchangeTokensRequest(code, clientID, secretKey, redirectURL, grantType 
 	}
 }
 
-func NewIntegrationInfo(authCode, referer string) *IntegrationInfoRequest {
+func NewRefreshAccessTokenRequest(clinetID, secretKey, redirectURL, refreshToken, grantType string) *RefreshAccessTokenRequest {
+	return &RefreshAccessTokenRequest{
+		ClinetID:     clinetID,
+		SecretKey:    secretKey,
+		RefreshToken: refreshToken,
+		RedirectURL:  redirectURL,
+		GrantType:    grantType,
+	}
+}
+
+func NewIntegrationInfo(authCode, domain string) *IntegrationInfoRequest {
 	return &IntegrationInfoRequest{
 		AuthCode: authCode,
-		Referer:  referer,
+		Domain:   domain,
 	}
 }
