@@ -18,6 +18,13 @@ type ExchangeTokensResponse struct {
 	Expires      int64  `json:"expires_in"`
 }
 
+type RefreshAccessTokenResponse struct {
+	TokenType    string `json:"token_type"`
+	Expires      int64  `json:"expires_in"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 func NewErrorResponse(err error) *ErrorResponse {
 	return &ErrorResponse{
 		Msg: err.Error(),

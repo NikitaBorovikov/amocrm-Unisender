@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	authGrantType = "authorization_code"
-	contentType   = "application/json"
+	authGrantType    = "authorization_code"
+	refreshGrantType = "refresh_token"
+	contentType      = "application/json"
 )
 
 type AccountHandlers struct {
@@ -35,7 +36,7 @@ func newAccountHandlers(uc *usecases.AccountUC, cfg *config.Config) *AccountHand
 func (h *AccountHandlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	integrationInfo := getIntegrationInfoFromQuery(r)
 
-	account, err := exchangeTokens(integrationInfo, &h.Cfg.Integration)
+	account, err := h.exchangeTokens(integrationInfo)
 	if err != nil {
 		logrus.Error(err)
 		sendErrorResponse(w, r, http.StatusBadRequest, err)
@@ -51,12 +52,12 @@ func (h *AccountHandlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	sendOKResponse(w, r, http.StatusCreated, account, "successful auth")
 }
 
-func exchangeTokens(integration *dto.IntegrationInfoRequest, cfg *config.Integration) (*amocrm.Account, error) {
+func (h *AccountHandlers) exchangeTokens(integration *dto.IntegrationInfoRequest) (*amocrm.Account, error) {
 	req := dto.NewExchangeTokensRequest(
 		integration.AuthCode,
-		cfg.ClientID,
-		cfg.SecrestKey,
-		cfg.RedirectURL,
+		h.Cfg.Integration.ClientID,
+		h.Cfg.Integration.SecrestKey,
+		h.Cfg.Integration.RedirectURL,
 		authGrantType,
 	)
 
@@ -65,20 +66,11 @@ func exchangeTokens(integration *dto.IntegrationInfoRequest, cfg *config.Integra
 		return nil, fmt.Errorf("failed to marshal json: %v", err)
 	}
 
-	exchangeTokensURL := makeExchangeTokensURL(integration.Referer)
+	exchangeTokensURL := makeAuthURL(integration.Domain)
 
-	resp, err := http.Post(
-		exchangeTokensURL,
-		contentType,
-		bytes.NewBuffer(reqBody),
-	)
+	resp, err := sendAuthRequest(reqBody, exchangeTokensURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to exchange tokens: status code %d", resp.StatusCode)
+		return nil, err
 	}
 
 	var exchangeResponse dto.ExchangeTokensResponse
@@ -88,6 +80,48 @@ func exchangeTokens(integration *dto.IntegrationInfoRequest, cfg *config.Integra
 
 	account := exchangeResponse.ToDomainAccount()
 	return &account, nil
+}
+
+func (h *AccountHandlers) refreshAccessToken(accountID int) error {
+	account, err := h.AccountUC.GetByID(accountID)
+	if err != nil {
+		return fmt.Errorf("failed to get account info: %v", err)
+	}
+
+	req := dto.NewRefreshAccessTokenRequest(
+		h.Cfg.Integration.ClientID,
+		h.Cfg.Integration.SecrestKey,
+		h.Cfg.Integration.RedirectURL,
+		account.Domain,
+		refreshGrantType,
+	)
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return fmt.Errorf("failed to marshal json: %v", err)
+	}
+
+	refreshURL := makeAuthURL(account.Domain)
+
+	resp, err := sendAuthRequest(reqBody, refreshURL)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+
+	var refreshResponse dto.RefreshAccessTokenResponse
+	if err := render.DecodeJSON(resp.Body, &refreshResponse); err != nil {
+		return fmt.Errorf("failed to decode refresh response: %v", err)
+	}
+
+	account.AccessToken = refreshResponse.AccessToken
+	account.RefreshToken = refreshResponse.RefreshToken
+	account.Expires = refreshResponse.Expires
+
+	if err := h.AccountUC.Update(account); err != nil {
+		return fmt.Errorf("failed to update tokens in DB: %v", err)
+	}
+	return nil
 }
 
 func (h *AccountHandlers) Add(w http.ResponseWriter, r *http.Request) {
@@ -113,11 +147,28 @@ func (h *AccountHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 func getIntegrationInfoFromQuery(r *http.Request) *dto.IntegrationInfoRequest {
 	integrationInfo := &dto.IntegrationInfoRequest{
 		AuthCode: r.URL.Query().Get("code"),
-		Referer:  r.URL.Query().Get("referer"),
+		Domain:   r.URL.Query().Get("referer"),
 	}
 	return integrationInfo
 }
 
-func makeExchangeTokensURL(referer string) string {
-	return fmt.Sprintf("https://%s/oauth2/access_token", referer)
+func makeAuthURL(domain string) string {
+	return fmt.Sprintf("https://%s/oauth2/access_token", domain)
+}
+
+func sendAuthRequest(reqBody []byte, url string) (*http.Response, error) {
+	resp, err := http.Post(
+		url,
+		contentType,
+		bytes.NewBuffer(reqBody),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("amoCRM error: status code %d", resp.StatusCode)
+	}
+	return resp, nil
 }
