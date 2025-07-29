@@ -12,6 +12,7 @@ const (
 type Config struct {
 	RestServer  RestServer `yaml:"rest_server"`
 	Integration Integration
+	DB          DB
 }
 
 type RestServer struct {
@@ -23,6 +24,15 @@ type Integration struct {
 	ClientID    string `env:"CLIENT_ID"`
 	SecrestKey  string `env:"SECRET_KEY"`
 	RedirectURL string `env:"REDIRECT_URL"`
+}
+
+type DB struct {
+	Host     string `env:"DB_HOST"`
+	User     string `env:"DB_USER"`
+	Password string `env:"DB_PASSWORD"`
+	Name     string `env:"DB_NAME"`
+	Port     int    `env:"DB_PORT"`
+	Driver   string `env:"DB_DRIVER"`
 }
 
 func InitConfig() (*Config, error) {
@@ -37,6 +47,10 @@ func InitConfig() (*Config, error) {
 	}
 
 	if err := cleanenv.ReadEnv(&cfg.Integration); err != nil {
+		return nil, err
+	}
+
+	if err := cleanenv.ReadEnv(&cfg.DB); err != nil {
 		return nil, err
 	}
 
