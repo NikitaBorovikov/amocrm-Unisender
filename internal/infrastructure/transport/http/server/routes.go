@@ -10,6 +10,10 @@ func initRoutes(h *handlers.Handlers) {
 	//r := chi.NewRouter()
 
 	http.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		h.AccountHandlers.HandleAuth(w, r)
+		h.HandleAuth(w, r)
+	})
+
+	http.HandleFunc("/contacts", func(w http.ResponseWriter, r *http.Request) {
+		h.GetContacts(0) //REMOVE: FOR TESTING
 	})
 }

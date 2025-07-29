@@ -1,19 +1,55 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
+	"amocrm2.0/internal/core/amocrm"
+	"amocrm2.0/internal/infrastructure/transport/http/dto"
 	"amocrm2.0/internal/usecases"
+	"github.com/go-chi/render"
+	"github.com/sirupsen/logrus"
 )
 
 type ContactHandlers struct {
 	ContactUC *usecases.ContactUC
+	AccountUC *usecases.AccountUC
 }
 
-func newContactHandlers(uc *usecases.ContactUC) *ContactHandlers {
+func newContactHandlers(contactUC *usecases.ContactUC, accountUC *usecases.AccountUC) *ContactHandlers {
 	return &ContactHandlers{
-		ContactUC: uc,
+		ContactUC: contactUC,
+		AccountUC: accountUC,
 	}
+}
+
+func (h *Handlers) GetContacts(accountID int) ([]amocrm.Contact, error) {
+	account, err := h.AccountHandlers.AccountUC.GetByID(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account info: %v", err)
+	}
+
+	if !isValidAccessToken(account) {
+		if err := h.refreshAccessToken(account.AccountID); err != nil {
+			return nil, fmt.Errorf("failed to refresh token: %v", err)
+		}
+	}
+
+	getContactURl := makeGetContactsURL(account.Domain)
+	resp, err := sendGetContactsRequest(account.AccessToken, getContactURl)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var amoCRMResponse dto.ContactAmoCRMResponse
+	if err := render.DecodeJSON(resp.Body, &amoCRMResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON: %v", err)
+	}
+
+	contacts := amoCRMResponse.ToDomainContacts()
+	logrus.Info(contacts) //REMOVE: for testing
+	return contacts, nil
 }
 
 func (h *ContactHandlers) Add(w http.ResponseWriter, r *http.Request) {
@@ -34,4 +70,38 @@ func (h *ContactHandlers) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContactHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 
+}
+
+func sendGetContactsRequest(accessToken, url string) (*http.Response, error) {
+	req, err := prepareGetContactRequest(accessToken, url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare get contacts request: %v", err)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send get contacts request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get contacts: status code %d", resp.StatusCode)
+	}
+
+	return resp, nil
+}
+
+func prepareGetContactRequest(accessToken, url string) (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+accessToken)
+	req.Header.Add("Accept", "application/json")
+	return req, nil
+}
+
+func makeGetContactsURL(domain string) string {
+	return fmt.Sprintf("https://%s/api/v4/contacts", domain)
 }

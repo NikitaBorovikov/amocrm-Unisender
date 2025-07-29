@@ -13,21 +13,29 @@ func NewAccountUC(accountRepo amocrm.AccountRepo) *AccountUC {
 }
 
 func (uc *AccountUC) Add(account *amocrm.Account) error {
-	return nil
+	return uc.AccountRepo.Add(account)
 }
 
 func (uc *AccountUC) GetByID(accountID int) (*amocrm.Account, error) {
-	return nil, nil
+	account, err := uc.AccountRepo.GetByID(accountID)
+	if err != nil || account == nil {
+		return nil, err
+	}
+	return account, nil
 }
 
 func (uc *AccountUC) GetAll() ([]amocrm.Account, error) {
-	return nil, nil
+	accounts, err := uc.AccountRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return accounts, nil
 }
 
 func (uc *AccountUC) Update(account *amocrm.Account) error {
-	return nil
+	return uc.AccountRepo.Update(account)
 }
 
 func (uc *AccountUC) Delete(accountID int) error {
-	return nil
+	return uc.AccountRepo.Delete(accountID)
 }

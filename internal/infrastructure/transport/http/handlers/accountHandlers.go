@@ -1,23 +1,10 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"amocrm2.0/internal/config"
-	"amocrm2.0/internal/core/amocrm"
-	"amocrm2.0/internal/infrastructure/transport/http/dto"
 	"amocrm2.0/internal/usecases"
-	"github.com/go-chi/render"
-	"github.com/sirupsen/logrus"
-)
-
-const (
-	authGrantType    = "authorization_code"
-	refreshGrantType = "refresh_token"
-	contentType      = "application/json"
 )
 
 type AccountHandlers struct {
@@ -30,98 +17,6 @@ func newAccountHandlers(uc *usecases.AccountUC, cfg *config.Config) *AccountHand
 		AccountUC: uc,
 		Cfg:       cfg,
 	}
-}
-
-// GET method
-func (h *AccountHandlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
-	integrationInfo := getIntegrationInfoFromQuery(r)
-
-	account, err := h.exchangeTokens(integrationInfo)
-	if err != nil {
-		logrus.Error(err)
-		sendErrorResponse(w, r, http.StatusBadRequest, err)
-		return
-	}
-
-	if err := h.AccountUC.Add(account); err != nil {
-		logrus.Error(err)
-		sendErrorResponse(w, r, http.StatusInternalServerError, err)
-		return
-	}
-
-	sendOKResponse(w, r, http.StatusCreated, account, "successful auth")
-}
-
-func (h *AccountHandlers) exchangeTokens(integration *dto.IntegrationInfoRequest) (*amocrm.Account, error) {
-	req := dto.NewExchangeTokensRequest(
-		integration.AuthCode,
-		h.Cfg.Integration.ClientID,
-		h.Cfg.Integration.SecrestKey,
-		h.Cfg.Integration.RedirectURL,
-		authGrantType,
-	)
-
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal json: %v", err)
-	}
-
-	exchangeTokensURL := makeAuthURL(integration.Domain)
-
-	resp, err := sendAuthRequest(reqBody, exchangeTokensURL)
-	if err != nil {
-		return nil, err
-	}
-
-	var exchangeResponse dto.ExchangeTokensResponse
-	if err := render.DecodeJSON(resp.Body, &exchangeResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode exchange response: %v", err)
-	}
-
-	account := exchangeResponse.ToDomainAccount()
-	return &account, nil
-}
-
-func (h *AccountHandlers) refreshAccessToken(accountID int) error {
-	account, err := h.AccountUC.GetByID(accountID)
-	if err != nil {
-		return fmt.Errorf("failed to get account info: %v", err)
-	}
-
-	req := dto.NewRefreshAccessTokenRequest(
-		h.Cfg.Integration.ClientID,
-		h.Cfg.Integration.SecrestKey,
-		h.Cfg.Integration.RedirectURL,
-		account.Domain,
-		refreshGrantType,
-	)
-
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return fmt.Errorf("failed to marshal json: %v", err)
-	}
-
-	refreshURL := makeAuthURL(account.Domain)
-
-	resp, err := sendAuthRequest(reqBody, refreshURL)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
-
-	var refreshResponse dto.RefreshAccessTokenResponse
-	if err := render.DecodeJSON(resp.Body, &refreshResponse); err != nil {
-		return fmt.Errorf("failed to decode refresh response: %v", err)
-	}
-
-	account.AccessToken = refreshResponse.AccessToken
-	account.RefreshToken = refreshResponse.RefreshToken
-	account.Expires = refreshResponse.Expires
-
-	if err := h.AccountUC.Update(account); err != nil {
-		return fmt.Errorf("failed to update tokens in DB: %v", err)
-	}
-	return nil
 }
 
 func (h *AccountHandlers) Add(w http.ResponseWriter, r *http.Request) {
@@ -142,33 +37,4 @@ func (h *AccountHandlers) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *AccountHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 
-}
-
-func getIntegrationInfoFromQuery(r *http.Request) *dto.IntegrationInfoRequest {
-	integrationInfo := &dto.IntegrationInfoRequest{
-		AuthCode: r.URL.Query().Get("code"),
-		Domain:   r.URL.Query().Get("referer"),
-	}
-	return integrationInfo
-}
-
-func makeAuthURL(domain string) string {
-	return fmt.Sprintf("https://%s/oauth2/access_token", domain)
-}
-
-func sendAuthRequest(reqBody []byte, url string) (*http.Response, error) {
-	resp, err := http.Post(
-		url,
-		contentType,
-		bytes.NewBuffer(reqBody),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("amoCRM error: status code %d", resp.StatusCode)
-	}
-	return resp, nil
 }
