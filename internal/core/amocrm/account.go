@@ -3,7 +3,7 @@ package amocrm
 import "time"
 
 type Account struct {
-	AccountID    int `gorm:"primartKey"`
+	AccountID    int `gorm:"primaryKey"`
 	Domain       string
 	AccessToken  string
 	RefreshToken string
