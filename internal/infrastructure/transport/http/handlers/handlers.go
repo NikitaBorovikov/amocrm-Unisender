@@ -13,13 +13,15 @@ type Handlers struct {
 	AccountHandlers     *AccountHandlers
 	IntegrationHandlers *IntegrationHandlers
 	ContactHandlers     *ContactHandlers
+	Cfg                 *config.Config
 }
 
 func NewHandlers(uc *usecases.UseCases, cfg *config.Config) *Handlers {
 	return &Handlers{
 		AccountHandlers:     newAccountHandlers(uc.AccountUC, cfg),
 		IntegrationHandlers: newIntegrationHandlers(uc.IntegrationUC),
-		ContactHandlers:     newContactHandlers(uc.ContactUC),
+		ContactHandlers:     newContactHandlers(uc.ContactUC, uc.AccountUC),
+		Cfg:                 cfg,
 	}
 }
 
