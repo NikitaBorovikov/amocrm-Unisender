@@ -1,7 +1,7 @@
 package amocrm
 
 type Integration struct {
-	IntegrationID int
+	IntegrationID int `gorm:"primaryKey"`
 	AccountID     int
 	AuthCode      string
 	ClientID      string

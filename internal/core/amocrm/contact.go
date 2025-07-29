@@ -1,7 +1,7 @@
 package amocrm
 
 type Contact struct {
-	ContactID  int
+	ContactID  int `gorm:"primaryKey"`
 	AccountID  int
 	Name       string
 	Email      string
