@@ -29,6 +29,15 @@ func (h *Handlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, r, http.StatusBadRequest, err)
 		return
 	}
+	logrus.Info(account) //REMOVE
+	// Нужно получить ID аккаунта amoCRM, прежде чем записать в БД
+	accountID, err := h.GetAccountID(account.AccessToken, account.Domain)
+	if err != nil {
+		logrus.Error(err)
+		sendErrorResponse(w, r, http.StatusBadRequest, err)
+		return
+	}
+	account.AccountID = accountID
 
 	if err := h.AccountHandlers.AccountUC.Add(account); err != nil {
 		logrus.Error(err)

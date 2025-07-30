@@ -30,6 +30,10 @@ type RefreshAccessTokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type GetAccountInfoResponse struct {
+	ID int `json:"id"`
+}
+
 type ContactAmoCRMResponse struct {
 	Embedded Embedded `json:"_embedded"`
 }
