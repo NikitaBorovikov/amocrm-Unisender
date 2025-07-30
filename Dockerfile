@@ -22,7 +22,7 @@ WORKDIR /app
 
 COPY --from=builder /app/server .
 COPY --from=builder /app/config /app/config
-COPY --from=builder /app/.env .
+COPY --from=builder /app/.env .env
 
 EXPOSE 8083
 

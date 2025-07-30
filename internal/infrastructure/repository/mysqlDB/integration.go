@@ -20,33 +20,40 @@ func (r *IntegrationRepo) Add(integration *amocrm.Integration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return nil
+	result := r.db.Create(integration)
+	return result.Error
 }
 
 func (r *IntegrationRepo) GetByID(integrationID int) (*amocrm.Integration, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	return nil, nil
+	var integration amocrm.Integration
+	result := r.db.Where("integration_id = ?", integrationID).First(&integration)
+	return &integration, result.Error
 }
 
 func (r *IntegrationRepo) GetAll() ([]amocrm.Integration, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	return nil, nil
+	var integrations []amocrm.Integration
+	result := r.db.Find(&integrations)
+	return integrations, result.Error
 }
 
 func (r *IntegrationRepo) Update(integration *amocrm.Integration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return nil
+	result := r.db.Model(integration).Updates(integration)
+	return result.Error
 }
 
 func (r *IntegrationRepo) Delete(integrationID int) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return nil
+	result := r.db.Delete(&amocrm.Integration{}, integrationID)
+	return result.Error
 }
