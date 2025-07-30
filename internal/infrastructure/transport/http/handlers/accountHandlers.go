@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"amocrm2.0/internal/config"
+	"amocrm2.0/internal/infrastructure/transport/http/dto"
 	"amocrm2.0/internal/usecases"
+	"github.com/go-chi/render"
 	"github.com/sirupsen/logrus"
 )
 
@@ -49,6 +52,22 @@ func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 	// Вызов функции первичной синхронизации
 }
 
+func (h *Handlers) GetAccountID(accessToken, domain string) (int, error) {
+	getAccountURL := makeGetAccountURL(domain)
+
+	resp, err := sendGetRequestToAmoCRM(accessToken, getAccountURL)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var accountInfo dto.GetAccountInfoResponse
+	if err := render.DecodeJSON(resp.Body, &accountInfo); err != nil {
+		return 0, fmt.Errorf("failed to decode JSON: %v", err)
+	}
+	return accountInfo.ID, nil
+}
+
 func (h *AccountHandlers) Add(w http.ResponseWriter, r *http.Request) {
 
 }
@@ -67,4 +86,8 @@ func (h *AccountHandlers) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *AccountHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 
+}
+
+func makeGetAccountURL(domain string) string {
+	return fmt.Sprintf("https://%s/api/v4/account", domain)
 }

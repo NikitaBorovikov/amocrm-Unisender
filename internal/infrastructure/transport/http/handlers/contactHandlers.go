@@ -36,7 +36,7 @@ func (h *Handlers) GetContacts(accountID int) ([]amocrm.Contact, error) {
 	}
 
 	getContactURl := makeGetContactsURL(account.Domain)
-	resp, err := sendGetContactsRequest(account.AccessToken, getContactURl)
+	resp, err := sendGetRequestToAmoCRM(account.AccessToken, getContactURl)
 	if err != nil {
 		return nil, err
 	}
@@ -70,36 +70,6 @@ func (h *ContactHandlers) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *ContactHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 
-}
-
-func sendGetContactsRequest(accessToken, url string) (*http.Response, error) {
-	req, err := prepareGetContactRequest(accessToken, url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare get contacts request: %v", err)
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send get contacts request: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get contacts: status code %d", resp.StatusCode)
-	}
-
-	return resp, nil
-}
-
-func prepareGetContactRequest(accessToken, url string) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+accessToken)
-	req.Header.Add("Accept", "application/json")
-	return req, nil
 }
 
 func makeGetContactsURL(domain string) string {
