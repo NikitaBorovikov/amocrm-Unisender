@@ -65,3 +65,12 @@ func (r *AccountRepo) UpdateUnisenderKey(accountID int, key string) error {
 	result := r.db.Model(&amocrm.Account{}).Where("account_id = ?", accountID).Update("unisender_key", key)
 	return result.Error
 }
+
+func (r *AccountRepo) GetUnisenderKey(accountID int) (string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var account amocrm.Account
+	result := r.db.Where("account_id = ?", accountID).First(&account)
+	return account.UnisenderKey, result.Error
+}

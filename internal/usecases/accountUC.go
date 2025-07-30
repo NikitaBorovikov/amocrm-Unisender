@@ -51,6 +51,14 @@ func (uc *AccountUC) UpdateUnisenderKey(accountID int, key string) error {
 	return uc.AccountRepo.UpdateUnisenderKey(accountID, key)
 }
 
+func (uc *AccountUC) GetUnisenderKey(accountID int) (string, error) {
+	key, err := uc.AccountRepo.GetUnisenderKey(accountID)
+	if len(key) == 0 {
+		return "", fmt.Errorf("key is ivalid")
+	}
+	return key, err
+}
+
 func validateUnisenderKey(key string) bool {
 	if len(key) < 15 || len(key) > 100 {
 		return false
