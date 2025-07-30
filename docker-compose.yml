@@ -1,0 +1,68 @@
+version: '3'
+services:
+  app:
+    container_name: server
+    build: .
+    ports:
+      - 8083:8083
+      - 50051:50051
+    restart: on-failure
+    volumes:
+      - api:/usr/src/app/
+    depends_on:
+      # beanstalkd:
+      #   condition: service_healthy
+      mysql:
+        condition: service_healthy  # Ждём готовности MySQL
+    networks:
+      - fullstack
+    environment:
+      DB_HOST: mysql 
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      
+  mysql:
+    image: mysql:5.7
+    container_name: full_db_mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_HOST=${DB_HOST}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - database_mysql:/var/lib/mysql
+    networks:
+      - fullstack
+    healthcheck:  # Проверка готовности MySQL
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 10s
+      retries: 30  # Ждём до 30 попыток (5*30=150 секунд максимум)
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_container
+    depends_on:
+      - mysql
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=${DB_USER}
+      - PMA_PORT=${DB_PORT}
+      - PMA_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 9090:80
+    restart: always
+    networks:
+      - fullstack
+volumes:
+  api:
+  database_mysql:
+
+networks:
+  fullstack:
+    driver: bridge
