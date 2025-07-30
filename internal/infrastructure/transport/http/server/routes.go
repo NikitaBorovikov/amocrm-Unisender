@@ -16,4 +16,8 @@ func initRoutes(h *handlers.Handlers) {
 	http.HandleFunc("/contacts", func(w http.ResponseWriter, r *http.Request) {
 		h.GetContacts(0) //REMOVE: FOR TESTING
 	})
+
+	http.HandleFunc("/api_key", func(w http.ResponseWriter, r *http.Request) {
+		h.ReceiveUnisenderKey(w, r)
+	})
 }

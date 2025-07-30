@@ -1,6 +1,10 @@
 package usecases
 
-import "amocrm2.0/internal/core/amocrm"
+import (
+	"fmt"
+
+	"amocrm2.0/internal/core/amocrm"
+)
 
 type AccountUC struct {
 	AccountRepo amocrm.AccountRepo
@@ -38,4 +42,18 @@ func (uc *AccountUC) Update(account *amocrm.Account) error {
 
 func (uc *AccountUC) Delete(accountID int) error {
 	return uc.AccountRepo.Delete(accountID)
+}
+
+func (uc *AccountUC) UpdateUnisenderKey(accountID int, key string) error {
+	if !validateUnisenderKey(key) {
+		return fmt.Errorf("invalid unisender API key")
+	}
+	return uc.AccountRepo.UpdateUnisenderKey(accountID, key)
+}
+
+func validateUnisenderKey(key string) bool {
+	if len(key) < 15 || len(key) > 100 {
+		return false
+	}
+	return true
 }

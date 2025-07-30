@@ -57,3 +57,11 @@ func (r *AccountRepo) Delete(accountID int) error {
 	result := r.db.Delete(&amocrm.Account{}, accountID)
 	return result.Error
 }
+
+func (r *AccountRepo) UpdateUnisenderKey(accountID int, key string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	result := r.db.Model(&amocrm.Account{}).Where("account_id = ?", accountID).Update("unisender_key", key)
+	return result.Error
+}
