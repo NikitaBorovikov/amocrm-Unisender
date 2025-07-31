@@ -34,6 +34,17 @@ type GetAccountInfoResponse struct {
 	ID int `json:"id"`
 }
 
+type UnisenderImportResponse struct {
+	UniResult UniResult `json:"result"`
+	Error     string    `json:"error,omitempty"`
+}
+
+type UniResult struct {
+	Total    int `json:"total"`
+	Inserted int `json:"inserted"`
+	Updated  int `json:"updated"`
+}
+
 type ContactAmoCRMResponse struct {
 	Embedded Embedded `json:"_embedded"`
 }
