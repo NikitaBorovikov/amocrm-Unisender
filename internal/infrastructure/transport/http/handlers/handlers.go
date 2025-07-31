@@ -11,16 +11,14 @@ import (
 )
 
 type Handlers struct {
-	AccountHandlers *AccountHandlers
-	ContactHandlers *ContactHandlers
-	Cfg             *config.Config
+	UseCases *usecases.UseCases
+	Cfg      *config.Config
 }
 
 func NewHandlers(uc *usecases.UseCases, cfg *config.Config) *Handlers {
 	return &Handlers{
-		AccountHandlers: newAccountHandlers(uc.AccountUC, cfg),
-		ContactHandlers: newContactHandlers(uc.ContactUC, uc.AccountUC),
-		Cfg:             cfg,
+		UseCases: uc,
+		Cfg:      cfg,
 	}
 }
 
