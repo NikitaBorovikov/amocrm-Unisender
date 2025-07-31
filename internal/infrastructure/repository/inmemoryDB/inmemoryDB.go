@@ -1,15 +1,13 @@
 package inmemorydb
 
 type InmemoryDB struct {
-	AccountRepo     *AccountRepo
-	IntegrationRepo *IntegrationRepo
-	ContactRepo     *ContactRepo
+	AccountRepo *AccountRepo
+	ContactRepo *ContactRepo
 }
 
 func NewInmomryDB() *InmemoryDB {
 	return &InmemoryDB{
-		AccountRepo:     NewAccountRepo(),
-		IntegrationRepo: NewIntegrationRepo(),
-		ContactRepo:     NewContactRepo(),
+		AccountRepo: NewAccountRepo(),
+		ContactRepo: NewContactRepo(),
 	}
 }
