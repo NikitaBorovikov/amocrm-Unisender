@@ -13,8 +13,9 @@ func initRoutes(h *handlers.Handlers) {
 		h.HandleAuth(w, r)
 	})
 
-	http.HandleFunc("/contacts", func(w http.ResponseWriter, r *http.Request) {
-		h.GetContacts(0) //REMOVE: FOR TESTING
+	// REMOVE: FOR TESTING
+	http.HandleFunc("/sync", func(w http.ResponseWriter, r *http.Request) {
+		h.HandleFirstSync(32573390) //REMOVE: FOR TESTING
 	})
 
 	http.HandleFunc("/api_key", func(w http.ResponseWriter, r *http.Request) {

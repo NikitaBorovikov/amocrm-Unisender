@@ -7,6 +7,7 @@ type AccountRepo interface {
 	Update(account *Account) error
 	Delete(accountID int) error
 	UpdateUnisenderKey(accountID int, key string) error
+	GetUnisenderKey(accountID int) (string, error)
 }
 
 type IntegrationRepo interface {

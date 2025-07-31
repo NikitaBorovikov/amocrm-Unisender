@@ -21,6 +21,12 @@ type RefreshAccessTokenRequest struct {
 	RedirectURL  string `json:"redirect_uri"`
 }
 
+type UnisenderImportRequest struct {
+	APIKey     string     `json:"api_key"`
+	FieldNames []string   `json:"field_names"`
+	Data       [][]string `json:"data"`
+}
+
 type AddAccountRequest struct {
 	AccountID    int    `json:"account_id"`
 	AccessToken  string `json:"access_token"`
