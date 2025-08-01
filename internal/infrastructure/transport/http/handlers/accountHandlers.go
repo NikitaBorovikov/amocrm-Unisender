@@ -5,24 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"amocrm2.0/internal/config"
 	"amocrm2.0/internal/infrastructure/transport/http/dto"
-	"amocrm2.0/internal/usecases"
 	"github.com/go-chi/render"
 	"github.com/sirupsen/logrus"
 )
-
-type AccountHandlers struct {
-	AccountUC *usecases.AccountUC
-	Cfg       *config.Config
-}
-
-func newAccountHandlers(uc *usecases.AccountUC, cfg *config.Config) *AccountHandlers {
-	return &AccountHandlers{
-		AccountUC: uc,
-		Cfg:       cfg,
-	}
-}
 
 func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -40,16 +26,15 @@ func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, r, http.StatusBadRequest, err)
 		return
 	}
-	logrus.Infof("accountID: %d key: %s", accountID, apiKey)
 
-	if err := h.AccountHandlers.AccountUC.UpdateUnisenderKey(accountID, apiKey); err != nil {
+	if err := h.UseCases.AccountUC.UpdateUnisenderKey(accountID, apiKey); err != nil {
 		sendErrorResponse(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	sendOKResponse(w, r, http.StatusOK, nil, "Unisender key is updated")
 
-	// Вызов функции первичной синхронизации
+	h.HandleFirstSync(accountID)
 }
 
 func (h *Handlers) GetAccountID(accessToken, domain string) (int, error) {
@@ -66,26 +51,6 @@ func (h *Handlers) GetAccountID(accessToken, domain string) (int, error) {
 		return 0, fmt.Errorf("failed to decode JSON: %v", err)
 	}
 	return accountInfo.ID, nil
-}
-
-func (h *AccountHandlers) Add(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *AccountHandlers) GetByID(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *AccountHandlers) GetAll(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *AccountHandlers) Update(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *AccountHandlers) Delete(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func makeGetAccountURL(domain string) string {

@@ -10,6 +10,5 @@ type Account struct {
 	Expires      int64
 	IssuedAt     time.Time
 	UnisenderKey string
-	Integration  []Integration `gorm:"foreignKey:AccountID"`
-	Contacts     []Contact     `gorm:"foreignKey:AccountID"`
+	Contacts     []Contact `gorm:"foreignKey:AccountID"`
 }

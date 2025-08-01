@@ -27,7 +27,6 @@ func RunServer() {
 
 	err = db.AutoMigrate(
 		&amocrm.Account{},
-		&amocrm.Integration{},
 		&amocrm.Contact{},
 	)
 	if err != nil {
@@ -36,8 +35,8 @@ func RunServer() {
 
 	//repo := inmemorydb.NewInmomryDB()
 	repo := mysqldb.NewMysqlRepo(db)
-	usecase := usecases.NewUseCases(repo.AccountRepo, repo.IntegrationRepo, repo.ContactRepo)
-	handlers := handlers.NewHandlers(usecase, cfg)
+	usecases := usecases.NewUseCases(repo.AccountRepo, repo.ContactRepo)
+	handlers := handlers.NewHandlers(usecases, cfg)
 	go server.Run(handlers, cfg.RestServer.Port)
 
 	select {}

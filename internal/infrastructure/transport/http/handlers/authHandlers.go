@@ -39,7 +39,7 @@ func (h *Handlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	account.AccountID = accountID
 
-	if err := h.AccountHandlers.AccountUC.Add(account); err != nil {
+	if err := h.UseCases.AccountUC.Add(account); err != nil {
 		logrus.Error(err)
 		sendErrorResponse(w, r, http.StatusInternalServerError, err)
 		return
@@ -80,7 +80,7 @@ func (h *Handlers) exchangeTokens(integration *dto.IntegrationInfoRequest) (*amo
 }
 
 func (h *Handlers) refreshAccessToken(accountID int) error {
-	account, err := h.AccountHandlers.AccountUC.GetByID(accountID)
+	account, err := h.UseCases.AccountUC.GetByID(accountID)
 	if err != nil {
 		return fmt.Errorf("failed to get account info: %v", err)
 	}
@@ -117,7 +117,7 @@ func (h *Handlers) refreshAccessToken(accountID int) error {
 	account.Expires = refreshResponse.Expires
 	account.IssuedAt = time.Now()
 
-	if err := h.AccountHandlers.AccountUC.Update(account); err != nil {
+	if err := h.UseCases.AccountUC.Update(account); err != nil {
 		return fmt.Errorf("failed to update tokens in DB: %v", err)
 	}
 	return nil

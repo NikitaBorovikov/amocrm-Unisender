@@ -13,12 +13,12 @@ func initRoutes(h *handlers.Handlers) {
 		h.HandleAuth(w, r)
 	})
 
-	// REMOVE: FOR TESTING
-	http.HandleFunc("/sync", func(w http.ResponseWriter, r *http.Request) {
-		h.HandleFirstSync(32573390) //REMOVE: FOR TESTING
-	})
-
+	// Important: getting the Unisender API key is the trigger for starting the initial contact synchronization.
 	http.HandleFunc("/api_key", func(w http.ResponseWriter, r *http.Request) {
 		h.ReceiveUnisenderKey(w, r)
+	})
+
+	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
+		h.ReceiveContactWebhook(w, r)
 	})
 }

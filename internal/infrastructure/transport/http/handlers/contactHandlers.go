@@ -8,7 +8,6 @@ import (
 
 	"amocrm2.0/internal/core/amocrm"
 	"amocrm2.0/internal/infrastructure/transport/http/dto"
-	"amocrm2.0/internal/usecases"
 	"github.com/go-chi/render"
 	"github.com/sirupsen/logrus"
 )
@@ -17,18 +16,6 @@ const (
 	importContactsURL = "https://api.unisender.com/ru/api/importContacts?format=json"
 )
 
-type ContactHandlers struct {
-	ContactUC *usecases.ContactUC
-	AccountUC *usecases.AccountUC
-}
-
-func newContactHandlers(contactUC *usecases.ContactUC, accountUC *usecases.AccountUC) *ContactHandlers {
-	return &ContactHandlers{
-		ContactUC: contactUC,
-		AccountUC: accountUC,
-	}
-}
-
 func (h *Handlers) HandleFirstSync(accountID int) {
 	contacts, err := h.GetContacts(accountID)
 	if err != nil {
@@ -36,7 +23,7 @@ func (h *Handlers) HandleFirstSync(accountID int) {
 		return
 	}
 
-	apiKey, err := h.AccountHandlers.AccountUC.GetUnisenderKey(accountID)
+	apiKey, err := h.UseCases.AccountUC.GetUnisenderKey(accountID)
 	if err != nil {
 		logrus.Errorf("failed to get Unisender API key: %v", err)
 		return
@@ -51,7 +38,7 @@ func (h *Handlers) HandleFirstSync(accountID int) {
 }
 
 func (h *Handlers) GetContacts(accountID int) ([]amocrm.Contact, error) {
-	account, err := h.AccountHandlers.AccountUC.GetByID(accountID)
+	account, err := h.UseCases.AccountUC.GetByID(accountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account info: %v", err)
 	}
@@ -90,26 +77,6 @@ func (h *Handlers) SendContactsToUnisender(data *dto.UnisenderImportRequest) err
 		return fmt.Errorf("failed to decode JSON: %v", err)
 	}
 	return nil
-}
-
-func (h *ContactHandlers) Add(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *ContactHandlers) GetByID(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *ContactHandlers) GetAll(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *ContactHandlers) Update(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (h *ContactHandlers) Delete(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func makeGetContactsURL(domain string) string {

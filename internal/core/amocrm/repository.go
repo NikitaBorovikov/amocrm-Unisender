@@ -10,14 +10,6 @@ type AccountRepo interface {
 	GetUnisenderKey(accountID int) (string, error)
 }
 
-type IntegrationRepo interface {
-	Add(integration *Integration) error
-	GetByID(integrationID int) (*Integration, error)
-	GetAll() ([]Integration, error)
-	Update(integration *Integration) error
-	Delete(integrationID int) error
-}
-
 type ContactRepo interface {
 	Add(contact *Contact) error
 	GetByID(contactID int) (*Contact, error)
