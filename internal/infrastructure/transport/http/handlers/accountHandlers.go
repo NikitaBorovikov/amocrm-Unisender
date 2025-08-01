@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"amocrm2.0/internal/infrastructure/queue"
 	"amocrm2.0/internal/infrastructure/transport/http/dto"
 	"github.com/go-chi/render"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,17 @@ func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 
 	sendOKResponse(w, r, http.StatusOK, nil, "Unisender key is updated")
 
-	h.HandleFirstSync(accountID)
+	task := queue.SyncContactsTask{
+		AccountID:    accountID,
+		UnisenderKey: apiKey,
+		TaskType:     "first_sync",
+	}
+
+	_, err = h.Producer.AddSyncContactsTask(task)
+	if err != nil {
+		logrus.Errorf("failed queue a task: %v", err)
+		return
+	}
 }
 
 func (h *Handlers) GetAccountID(accessToken, domain string) (int, error) {

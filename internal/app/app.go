@@ -15,6 +15,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	contactTube = "contact_sync"
+)
+
 func RunServer() {
 	cfg, err := config.InitConfig()
 	if err != nil {
@@ -41,9 +45,10 @@ func RunServer() {
 	}
 
 	//repo := inmemorydb.NewInmomryDB()
+	producer := queue.NewProducer(beanstalk.Conn, contactTube)
 	repo := mysqldb.NewMysqlRepo(db)
 	usecases := usecases.NewUseCases(repo.AccountRepo, repo.ContactRepo)
-	handlers := handlers.NewHandlers(usecases, cfg)
+	handlers := handlers.NewHandlers(usecases, producer, cfg)
 	go server.Run(handlers, cfg.RestServer.Port)
 
 	select {}
