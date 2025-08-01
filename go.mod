@@ -3,6 +3,7 @@ module amocrm2.0
 go 1.24.4
 
 require (
+	github.com/beanstalkd/go-beanstalk v0.2.0
 	github.com/go-chi/render v1.0.3
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1

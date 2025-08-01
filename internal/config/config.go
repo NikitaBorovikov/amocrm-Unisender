@@ -11,11 +11,17 @@ const (
 
 type Config struct {
 	RestServer  RestServer `yaml:"rest_server"`
+	Beanstalk   Beanstalk
 	Integration Integration
 	DB          DB
 }
 
 type RestServer struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
+
+type Beanstalk struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 }

@@ -5,6 +5,7 @@ import (
 
 	"amocrm2.0/internal/config"
 	"amocrm2.0/internal/core/amocrm"
+	"amocrm2.0/internal/infrastructure/queue"
 	mysqldb "amocrm2.0/internal/infrastructure/repository/mysqlDB"
 	"amocrm2.0/internal/infrastructure/transport/http/handlers"
 	"amocrm2.0/internal/infrastructure/transport/http/server"
@@ -19,6 +20,12 @@ func RunServer() {
 	if err != nil {
 		logrus.Fatalf("failed to init config: %v", err)
 	}
+
+	beanstalk, err := queue.InitBeanstalk(&cfg.Beanstalk)
+	if err != nil {
+		logrus.Fatalf("failed to init beanstalk: %v", err)
+	}
+	defer beanstalk.Conn.Close()
 
 	db, err := initMySQL(&cfg.DB)
 	if err != nil {
