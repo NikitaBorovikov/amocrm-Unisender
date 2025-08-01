@@ -26,7 +26,6 @@ func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, r, http.StatusBadRequest, err)
 		return
 	}
-	logrus.Infof("accountID: %d key: %s", accountID, apiKey)
 
 	if err := h.UseCases.AccountUC.UpdateUnisenderKey(accountID, apiKey); err != nil {
 		sendErrorResponse(w, r, http.StatusInternalServerError, err)
@@ -35,7 +34,7 @@ func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 
 	sendOKResponse(w, r, http.StatusOK, nil, "Unisender key is updated")
 
-	// Вызов функции первичной синхронизации
+	h.HandleFirstSync(accountID)
 }
 
 func (h *Handlers) GetAccountID(accessToken, domain string) (int, error) {
