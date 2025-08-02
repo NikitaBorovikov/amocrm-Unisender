@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	"amocrm2.0/internal/config"
@@ -10,6 +11,7 @@ import (
 	"amocrm2.0/internal/infrastructure/transport/http/handlers"
 	"amocrm2.0/internal/infrastructure/transport/http/server"
 	"amocrm2.0/internal/usecases"
+	"amocrm2.0/internal/worker"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -49,6 +51,11 @@ func RunServer() {
 	repo := mysqldb.NewMysqlRepo(db)
 	usecases := usecases.NewUseCases(repo.AccountRepo, repo.ContactRepo)
 	handlers := handlers.NewHandlers(usecases, producer, cfg)
+	worker := worker.NewWorker(1, handlers, producer)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go worker.Run(ctx)
 	go server.Run(handlers, cfg.RestServer.Port)
 
 	select {}

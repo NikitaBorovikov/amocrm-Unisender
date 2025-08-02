@@ -35,7 +35,6 @@ func (p *Producer) AddSyncContactsTask(task SyncContactsTask) (uint64, error) {
 func (p *Producer) FetchSyncContactsTask() (*SyncContactsTask, error) {
 	tubeSet := beanstalk.NewTubeSet(p.conn, p.tubeName)
 	id, body, err := tubeSet.Reserve(30 * time.Second)
-	logrus.Infof("recieve task (id = %d): tube name = %s", id, p.tubeName)
 	if err != nil {
 		if errors.Is(err, beanstalk.ErrTimeout) {
 			return nil, nil // задачи нет
