@@ -1,15 +1,20 @@
-package app
+package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"amocrm2.0/internal/config"
 	"amocrm2.0/internal/core/amocrm"
 	"amocrm2.0/internal/infrastructure/queue"
 	mysqldb "amocrm2.0/internal/infrastructure/repository/mysqlDB"
 	"amocrm2.0/internal/infrastructure/transport/http/handlers"
-	"amocrm2.0/internal/infrastructure/transport/http/server"
 	"amocrm2.0/internal/usecases"
+	"amocrm2.0/internal/worker"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,7 +24,11 @@ const (
 	contactTube = "contact_sync"
 )
 
-func RunServer() {
+func main() {
+	var workerID int
+	flag.IntVar(&workerID, "worker-id", 0, "Worker ID")
+	flag.Parse()
+
 	cfg, err := config.InitConfig()
 	if err != nil {
 		logrus.Fatalf("failed to init config: %v", err)
@@ -36,49 +45,32 @@ func RunServer() {
 		logrus.Fatalf("failed to init DB: %v", err)
 	}
 
-	if err := db.AutoMigrate(&amocrm.Account{}, &amocrm.Contact{}); err != nil {
+	err = db.AutoMigrate(
+		&amocrm.Account{},
+		&amocrm.Contact{},
+	)
+	if err != nil {
 		logrus.Fatalf("failed to run DB migrate: %v", err)
 	}
 
-	//repo := inmemorydb.NewInmomryDB()
 	producer := queue.NewProducer(beanstalk.Conn, contactTube)
 	repo := mysqldb.NewMysqlRepo(db)
 	usecases := usecases.NewUseCases(repo.AccountRepo, repo.ContactRepo)
 	handlers := handlers.NewHandlers(usecases, producer, cfg)
+	worker := worker.NewWorker(workerID, handlers, producer)
 
-	// var wg sync.WaitGroup
-	// serverErrors := make(chan error, 2)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// // //grpc-server
-	// // wg.Add(1)
-	// // go func() {
-	// // 	defer wg.Done()
-	// // }()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigChan
+		logrus.Infof("Received signal: %v", sig)
+		cancel()
+	}()
 
-	// wg.Add(1)
-	// go func() {
-	// 	defer wg.Done()
-	// 	logrus.Infof("http-server is starting on port %s...", cfg.RestServer.Port)
-	// 	if err := server.Run(handlers, cfg.RestServer.Port); err != nil {
-	// 		serverErrors <- err
-	// 	}
-
-	// }()
-
-	// quit := make(chan os.Signal, 1)
-	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-	// select {
-	// case <-quit:
-	// 	logrus.Info("Received shutdown signal")
-	// case err := <-serverErrors:
-	// 	logrus.Errorf("Server error: %v", err)
-	// }
-
-	// wg.Wait()
-	go server.Run(handlers, cfg.RestServer.Port)
-
-	select {}
+	worker.Run(ctx)
 }
 
 func initMySQL(cfg *config.DB) (*gorm.DB, error) {

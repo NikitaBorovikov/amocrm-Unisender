@@ -77,6 +77,26 @@ services:
         retries: 10
       volumes:
         - ".:/mnt/ddev_config"
+    
+  manager:
+    container_name: manager
+    build:
+      context: .
+      dockerfile: Dockerfile.manager
+    restart: "unless-stopped"
+    depends_on:
+      beanstalkd:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql 
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    networks:
+      - fullstack
 volumes:
   api:
   database_mysql:
