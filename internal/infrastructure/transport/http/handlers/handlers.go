@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"amocrm2.0/internal/config"
+	"amocrm2.0/internal/infrastructure/queue"
 	"amocrm2.0/internal/infrastructure/transport/http/dto"
 	"amocrm2.0/internal/usecases"
 	"github.com/go-chi/render"
@@ -12,12 +13,14 @@ import (
 
 type Handlers struct {
 	UseCases *usecases.UseCases
+	Producer *queue.Producer
 	Cfg      *config.Config
 }
 
-func NewHandlers(uc *usecases.UseCases, cfg *config.Config) *Handlers {
+func NewHandlers(uc *usecases.UseCases, producer *queue.Producer, cfg *config.Config) *Handlers {
 	return &Handlers{
 		UseCases: uc,
+		Producer: producer,
 		Cfg:      cfg,
 	}
 }

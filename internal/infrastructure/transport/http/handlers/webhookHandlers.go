@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"amocrm2.0/internal/core/amocrm"
+	"amocrm2.0/internal/infrastructure/queue"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,24 +24,38 @@ func (h *Handlers) ReceiveContactWebhook(w http.ResponseWriter, r *http.Request)
 		logrus.Errorf("failed to parse form: %v", err)
 		return
 	}
-	accountID := r.PostForm.Get("account[id]")
-	logrus.Infof("ACCOUNT_ID: %s", accountID) // REMOVE: for testing
+	accountIDStr := r.PostForm.Get("account[id]")
+	accountID, err := strconv.Atoi(accountIDStr)
+	if err != nil {
+		logrus.Errorf("failed to convent accountID to int: %v", err)
+		return
+	}
+
 	addedContacts := parseContactsFromWebhook(r.PostForm, addEventType)
 	updatedContacts := parseContactsFromWebhook(r.PostForm, updateEventType)
 
-	// Может тут записывать в очередь не по одному контакту, а сразу список
-	for _, contact := range addedContacts {
-		h.processContact(contact, addEventType)
-	}
-
-	for _, contact := range updatedContacts {
-		h.processContact(contact, updateEventType)
-	}
+	h.processContact(addedContacts, addEventType, accountID)
+	h.processContact(updatedContacts, updateEventType, accountID)
 }
 
-func (h *Handlers) processContact(contact amocrm.Contact, eventType string) {
-	// make a task
-	// add in a queue
+func (h *Handlers) processContact(contacts []amocrm.Contact, eventType string, accountID int) {
+	// Если нет валидных котнактов, то нет смысла записывать задачу в очередь
+	if len(contacts) == 0 {
+		return
+	}
+
+	task := queue.SyncContactsTask{
+		AccountID: accountID,
+		EventType: eventType,
+		TaskType:  "webhook_sync",
+		Contacts:  contacts,
+	}
+
+	_, err := h.Producer.AddSyncContactsTask(task)
+	if err != nil {
+		logrus.Errorf("failed to queue a task: %v", err)
+		return
+	}
 }
 
 func parseContactsFromWebhook(form url.Values, eventType string) []amocrm.Contact {

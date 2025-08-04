@@ -10,8 +10,8 @@ services:
     volumes:
       - api:/usr/src/app/
     depends_on:
-      # beanstalkd:
-      #   condition: service_healthy
+      beanstalkd:
+        condition: service_healthy
       mysql:
         condition: service_healthy  # Ждём готовности MySQL
     networks:
@@ -57,6 +57,44 @@ services:
     ports:
       - 9090:80
     restart: always
+    networks:
+      - fullstack
+
+  beanstalkd:
+      container_name: ddev-beanstalkd
+      image: schickling/beanstalkd
+      restart: "unless-stopped"
+      ports:
+        - "11300:11300"
+      networks:
+        - fullstack
+      labels:
+        com.ddev.site-name: "sitename"
+      healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "11300"]
+        interval: 5s
+        timeout: 3s
+        retries: 10
+      volumes:
+        - ".:/mnt/ddev_config"
+    
+  manager:
+    container_name: manager
+    build:
+      context: .
+      dockerfile: Dockerfile.manager
+    restart: "unless-stopped"
+    depends_on:
+      beanstalkd:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql 
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
     networks:
       - fullstack
 volumes:
