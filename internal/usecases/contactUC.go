@@ -7,6 +7,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	errCodeDublicate = "1062"
+)
+
 type ContactUC struct {
 	ContactRepo amocrm.ContactRepo
 }
@@ -32,7 +36,7 @@ func (uc *ContactUC) handleAddContacts(contacts []amocrm.Contact, syncStatus boo
 	for _, contact := range contacts {
 		contact.SyncStatus = syncStatus
 		if err := uc.Add(&contact); err != nil {
-			if strings.Contains(err.Error(), "1062") { // Если такой контакт уже есть, то обновляем его данные
+			if strings.Contains(err.Error(), errCodeDublicate) { // Если такой контакт уже есть, то обновляем его данные
 				uc.Update(&contact)
 				continue
 			}
