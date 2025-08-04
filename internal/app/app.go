@@ -80,9 +80,6 @@ func RunServer() {
 	}
 
 	wg.Wait()
-	// go server.Run(handlers, cfg.RestServer.Port)
-
-	// select {}
 }
 
 func initMySQL(cfg *config.DB) (*gorm.DB, error) {

@@ -7,8 +7,6 @@ import (
 )
 
 func initRoutes(h *handlers.Handlers) {
-	//r := chi.NewRouter()
-
 	http.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
 		h.HandleAuth(w, r)
 	})

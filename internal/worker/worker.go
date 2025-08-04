@@ -75,9 +75,10 @@ func (w *Worker) handleFirstSync(taskInfo *queue.SyncContactsTask) {
 	importData := prepareUnisenderImportData(taskInfo.UnisenderKey, contacts)
 	if err := w.Handlers.SendContactsToUnisender(importData); err != nil {
 		logrus.Error(err)
+		w.Handlers.UseCases.ContactUC.HandleSaveNewContactData(contacts, false, taskInfo.EventType)
 		return
 	}
-	// TODO: сохранение контактов в БД в зависимости от статуса ответа Unisender.
+	w.Handlers.UseCases.ContactUC.HandleSaveNewContactData(contacts, true, taskInfo.EventType)
 	logrus.Infof("successfull sync: accountId = %d, taskType = %s", taskInfo.AccountID, taskInfo.TaskType)
 }
 
@@ -91,9 +92,10 @@ func (w *Worker) handleWebhookSync(taskInfo *queue.SyncContactsTask) {
 	importData := prepareUnisenderImportData(apiKey, taskInfo.Contacts)
 	if err := w.Handlers.SendContactsToUnisender(importData); err != nil {
 		logrus.Error(err)
+		w.Handlers.UseCases.ContactUC.HandleSaveNewContactData(taskInfo.Contacts, false, taskInfo.EventType)
 		return
 	}
-	// TODO: сохранение контактов в БД в зависимости от статуса ответа Unisender.
+	w.Handlers.UseCases.ContactUC.HandleSaveNewContactData(taskInfo.Contacts, true, taskInfo.EventType)
 	logrus.Infof("successfull sync: accountId = %d, taskType = %s", taskInfo.AccountID, taskInfo.TaskType)
 }
 

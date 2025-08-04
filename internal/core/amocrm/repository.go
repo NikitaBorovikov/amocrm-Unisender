@@ -12,8 +12,5 @@ type AccountRepo interface {
 
 type ContactRepo interface {
 	Add(contact *Contact) error
-	GetByID(contactID int) (*Contact, error)
-	GetAll() ([]Contact, error)
 	Update(contact *Contact) error
-	Delete(contactID int) error
 }

@@ -24,36 +24,10 @@ func (r *ContactRepo) Add(contact *amocrm.Contact) error {
 	return result.Error
 }
 
-func (r *ContactRepo) GetByID(contactID int) (*amocrm.Contact, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var contact amocrm.Contact
-	result := r.db.Where("contact_id = ?", contactID).First(&contact)
-	return &contact, result.Error
-}
-
-func (r *ContactRepo) GetAll() ([]amocrm.Contact, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var contacts []amocrm.Contact
-	result := r.db.Find(&contacts)
-	return contacts, result.Error
-}
-
 func (r *ContactRepo) Update(contact *amocrm.Contact) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	result := r.db.Model(contact).Updates(contact)
-	return result.Error
-}
-
-func (r *ContactRepo) Delete(contactID int) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	result := r.db.Delete(&amocrm.Contact{}, contactID)
 	return result.Error
 }

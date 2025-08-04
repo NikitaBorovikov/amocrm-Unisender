@@ -1,6 +1,15 @@
 package usecases
 
-import "amocrm2.0/internal/core/amocrm"
+import (
+	"strings"
+
+	"amocrm2.0/internal/core/amocrm"
+	"github.com/sirupsen/logrus"
+)
+
+const (
+	errCodeDublicate = "1062"
+)
 
 type ContactUC struct {
 	ContactRepo amocrm.ContactRepo
@@ -12,22 +21,43 @@ func NewContactUC(contactRepo amocrm.ContactRepo) *ContactUC {
 	}
 }
 
+func (uc *ContactUC) HandleSaveNewContactData(contacts []amocrm.Contact, syncStatus bool, eventType string) {
+	switch eventType {
+	case "add":
+		uc.handleAddContacts(contacts, syncStatus)
+	case "update":
+		uc.handleUpdateContacts(contacts, syncStatus)
+	default:
+		logrus.Info("invalid event type")
+	}
+}
+
+func (uc *ContactUC) handleAddContacts(contacts []amocrm.Contact, syncStatus bool) {
+	for _, contact := range contacts {
+		contact.SyncStatus = syncStatus
+		if err := uc.Add(&contact); err != nil {
+			if strings.Contains(err.Error(), errCodeDublicate) { // Если такой контакт уже есть, то обновляем его данные
+				uc.Update(&contact)
+				continue
+			}
+			logrus.Errorf("failed to add contact (id = %d): %v", contact.ContactID, err)
+		}
+	}
+}
+
+func (uc *ContactUC) handleUpdateContacts(contacts []amocrm.Contact, syncStatus bool) {
+	for _, contact := range contacts {
+		contact.SyncStatus = syncStatus
+		if err := uc.Update(&contact); err != nil {
+			logrus.Errorf("failed to update contact (id = %d): %v", contact.ContactID, err)
+		}
+	}
+}
+
 func (uc *ContactUC) Add(contact *amocrm.Contact) error {
-	return nil
-}
-
-func (uc *ContactUC) GetByID(contactID int) (*amocrm.Contact, error) {
-	return nil, nil
-}
-
-func (uc *ContactUC) GetAll() ([]amocrm.Contact, error) {
-	return nil, nil
+	return uc.ContactRepo.Add(contact)
 }
 
 func (uc *ContactUC) Update(contact *amocrm.Contact) error {
-	return nil
-}
-
-func (uc *ContactUC) Delete(contactID int) error {
-	return nil
+	return uc.ContactRepo.Update(contact)
 }

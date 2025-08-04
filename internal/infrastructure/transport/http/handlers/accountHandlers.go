@@ -39,6 +39,7 @@ func (h *Handlers) ReceiveUnisenderKey(w http.ResponseWriter, r *http.Request) {
 		AccountID:    accountID,
 		UnisenderKey: apiKey,
 		TaskType:     "first_sync",
+		EventType:    "add",
 	}
 
 	_, err = h.Producer.AddSyncContactsTask(task)
