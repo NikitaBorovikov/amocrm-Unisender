@@ -73,7 +73,6 @@ func (w *Worker) handleFirstSync(taskInfo *queue.SyncContactsTask) {
 	}
 
 	importData := prepareUnisenderImportData(taskInfo.UnisenderKey, contacts)
-	logrus.Info(contacts)
 	if err := w.Handlers.SendContactsToUnisender(importData); err != nil {
 		logrus.Error(err)
 		return

@@ -2,6 +2,10 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"amocrm2.0/internal/config"
 	"amocrm2.0/internal/core/amocrm"
@@ -46,8 +50,8 @@ func RunServer() {
 	usecases := usecases.NewUseCases(repo.AccountRepo, repo.ContactRepo)
 	handlers := handlers.NewHandlers(usecases, producer, cfg)
 
-	// var wg sync.WaitGroup
-	// serverErrors := make(chan error, 2)
+	var wg sync.WaitGroup
+	serverErrors := make(chan error, 2)
 
 	// // //grpc-server
 	// // wg.Add(1)
@@ -55,30 +59,30 @@ func RunServer() {
 	// // 	defer wg.Done()
 	// // }()
 
-	// wg.Add(1)
-	// go func() {
-	// 	defer wg.Done()
-	// 	logrus.Infof("http-server is starting on port %s...", cfg.RestServer.Port)
-	// 	if err := server.Run(handlers, cfg.RestServer.Port); err != nil {
-	// 		serverErrors <- err
-	// 	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		logrus.Infof("http-server is starting on port %s...", cfg.RestServer.Port)
+		if err := server.Run(handlers, cfg.RestServer.Port); err != nil {
+			serverErrors <- err
+		}
 
-	// }()
+	}()
 
-	// quit := make(chan os.Signal, 1)
-	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	// select {
-	// case <-quit:
-	// 	logrus.Info("Received shutdown signal")
-	// case err := <-serverErrors:
-	// 	logrus.Errorf("Server error: %v", err)
-	// }
+	select {
+	case <-quit:
+		logrus.Info("Received shutdown signal")
+	case err := <-serverErrors:
+		logrus.Errorf("Server error: %v", err)
+	}
 
-	// wg.Wait()
-	go server.Run(handlers, cfg.RestServer.Port)
+	wg.Wait()
+	// go server.Run(handlers, cfg.RestServer.Port)
 
-	select {}
+	// select {}
 }
 
 func initMySQL(cfg *config.DB) (*gorm.DB, error) {
