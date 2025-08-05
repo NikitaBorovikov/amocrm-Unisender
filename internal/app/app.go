@@ -54,12 +54,6 @@ func RunServer() {
 	var wg sync.WaitGroup
 	serverErrors := make(chan error, 2)
 
-	// // //grpc-server
-	// // wg.Add(1)
-	// // go func() {
-	// // 	defer wg.Done()
-	// // }()
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
