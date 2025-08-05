@@ -1,6 +1,9 @@
 rest_server:
   host: "localhost"
   port: ":8083"
+grpc_server:
+  host: "localhost"
+  port: ":50051"
 beanstalk:
   host: "beanstalkd"
   port: ":11300"

@@ -11,6 +11,7 @@ import (
 	"amocrm2.0/internal/core/amocrm"
 	"amocrm2.0/internal/infrastructure/queue"
 	mysqldb "amocrm2.0/internal/infrastructure/repository/mysqlDB"
+	"amocrm2.0/internal/infrastructure/transport/grpc"
 	"amocrm2.0/internal/infrastructure/transport/http/handlers"
 	"amocrm2.0/internal/infrastructure/transport/http/server"
 	"amocrm2.0/internal/usecases"
@@ -67,6 +68,15 @@ func RunServer() {
 			serverErrors <- err
 		}
 
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		logrus.Infof("grpc-server is starting on port %s...", cfg.GrpcServer.Port)
+		if err := grpc.RunGRPCServer(cfg.GrpcServer.Port, usecases.AccountUC); err != nil {
+			serverErrors <- err
+		}
 	}()
 
 	quit := make(chan os.Signal, 1)
