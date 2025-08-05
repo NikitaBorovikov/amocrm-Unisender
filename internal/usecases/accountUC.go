@@ -1,12 +1,15 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 
 	"amocrm2.0/internal/core/amocrm"
+	pb "amocrm2.0/proto"
 )
 
 type AccountUC struct {
+	pb.AccountServiceServer
 	AccountRepo amocrm.AccountRepo
 }
 
@@ -57,6 +60,18 @@ func (uc *AccountUC) GetUnisenderKey(accountID int) (string, error) {
 		return "", fmt.Errorf("key is ivalid")
 	}
 	return key, err
+}
+
+func (uc *AccountUC) Unsubscribe(ctx context.Context, req *pb.UnsubscribeRequest) (*pb.UnsubscribeResponse, error) {
+	resp := &pb.UnsubscribeResponse{}
+	if err := uc.AccountRepo.Delete(int(req.AccountId)); err != nil {
+		resp.Message = err.Error()
+		resp.Success = false
+		return resp, err
+	}
+	resp.Message = fmt.Sprintf("Account was successfully deleted (accountID = %d)", req.AccountId)
+	resp.Success = true
+	return resp, nil
 }
 
 func validateUnisenderKey(key string) bool {
