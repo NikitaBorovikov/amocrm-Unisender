@@ -1,0 +1,17 @@
+syntax = "proto3";
+package account;
+
+option go_package = "./proto";
+
+service AccountService {
+    rpc Unsubscribe(UnsubscribeRequest) returns (UnsubscribeResponse);
+}
+
+message UnsubscribeRequest {
+    int64 account_id = 1;
+}
+
+message UnsubscribeResponse {
+    bool success = 1;
+    string message = 2;
+}
