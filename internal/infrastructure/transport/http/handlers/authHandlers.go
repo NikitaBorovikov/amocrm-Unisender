@@ -19,7 +19,6 @@ const (
 	contentType      = "application/json"
 )
 
-// GET method
 func (h *Handlers) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	integrationInfo := getIntegrationInfoFromQuery(r)
 

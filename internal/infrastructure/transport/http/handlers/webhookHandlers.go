@@ -39,7 +39,7 @@ func (h *Handlers) ReceiveContactWebhook(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *Handlers) processContact(contacts []amocrm.Contact, eventType string, accountID int) {
-	// Если нет валидных котнактов, то нет смысла записывать задачу в очередь
+	// Если нет валидных контактов, то нет смысла записывать задачу в очередь
 	if len(contacts) == 0 {
 		return
 	}
